@@ -7,8 +7,8 @@ export const dispatchMoods = async (data:MoodEntry) => {
   return response.data;
 };
 
-export const getMoods = async () => {
-  const response = await axios.get(`/moods`);
+export const getMoods = async (page: number) => {
+  const response = await axios.get(`/moods?page=${page}`);
   return response.data;
 };
 

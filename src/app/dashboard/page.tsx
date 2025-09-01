@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import MoodLogger from '@/components/moodTrackingDashboard/MoodLogger';
 import MoodTrendsChart from '@/components/moodTrackingDashboard/MoodTrendsChart';
 import QuickStats from '@/components/moodTrackingDashboard/QuickStats';
@@ -10,124 +10,106 @@ import { getMoods, dispatchMoods, moodGraphRange } from '@/services/api/moodServ
 const MoodTrackingPage: React.FC = () => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('weekly');
-  const [totalEnteries, setTotalEnteries] = useState<string>("");
-  const [moodAverage, setMoodAverage]=useState<string>("");
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]); // NEW state for graph
+  const [totalEntries, setTotalEntries] = useState<number>(0);
+  const [moodAverage, setMoodAverage] = useState<string>("");
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+   const [currentPage, setCurrentPage] = useState<number>(1);
+    //  const entriesPerPage = 10;
+    //  const totalPages = Math.ceil(totalEntries / entriesPerPage);
 
-  /** Mood Options */
-  const moodOptions: MoodOption[] = useMemo(
-    () => [
-      { emoji: '😢', label: 'Sad', value: 1, color: '#e74c3c' },
-      { emoji: '😟', label: 'Anxious', value: 2, color: '#f39c12' },
-      { emoji: '😐', label: 'Neutral', value: 3, color: '#95a5a6' },
-      { emoji: '😊', label: 'Happy', value: 4, color: '#2ecc71' },
-      { emoji: '😄', label: 'Excited', value: 5, color: '#9b59b6' },
-    ],
-    []
-  );
+  /** Static options */
+  const moodOptions: MoodOption[] = useMemo(() => [
+    { emoji: '😢', label: 'Sad', value: 1, color: '#e74c3c' },
+    { emoji: '😟', label: 'Anxious', value: 2, color: '#f39c12' },
+    { emoji: '😐', label: 'Neutral', value: 3, color: '#95a5a6' },
+    { emoji: '😊', label: 'Happy', value: 4, color: '#2ecc71' },
+    { emoji: '😄', label: 'Excited', value: 5, color: '#9b59b6' },
+  ], []);
 
-  /** Tag Options */
-  const tagOptions: string[] = useMemo(
-    () => [
-      'Work',
-      'Family',
-      'Health',
-      'Social',
-      'Exercise',
-      'Sleep',
-      'Stress',
-      'Achievement',
-      'Relationship',
-      'Weather',
-    ],
-    []
-  );
+  const tagOptions = useMemo(() => [
+    'Work', 'Family', 'Health', 'Social', 'Exercise',
+    'Sleep', 'Stress', 'Achievement', 'Relationship', 'Weather',
+  ], []);
 
-  /** Fetch moods for quick stats & recent entries */
-  const fetchMoods = async () => {
+  /** Helpers */
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-US',
+      viewType === 'weekly'
+        ? { weekday: 'short' }
+        : { month: 'short', day: 'numeric' }
+    );
+
+  /** API Calls */
+  const fetchMoods = useCallback(async (page: number) => {
     try {
-      const data = await getMoods();
-      setTotalEnteries(data.total);
-      setMoodAverage(data.averageMood)
-      setMoodEntries(data.data);
-    } catch (error) {
-      console.error("Failed to fetch moods:", error);
+      const { totalPages, averageMood, data } = await getMoods(page);
+      setTotalEntries(totalPages);
+      setMoodAverage(averageMood);
+      setMoodEntries(data);
+    } catch (err) {
+      console.error("Failed to fetch moods:", err);
     }
-  };
-
-  /** Fetch moods for chart */
-  const fetchMoodGraphData = async (range: string) => {
-    try {
-      const response = await moodGraphRange(range);
-      // Assuming API gives you something like { date: string, mood: number }
-      const transformed: ChartDataPoint[] = response.data.map((entry: any) => ({
-        date:
-          viewType === 'weekly'
-            ? new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })
-            : new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        mood: entry.mood,
-        fullDate: entry.date,
-      }));
-      setChartData(transformed);
-    } catch (error) {
-      console.error("Failed to fetch graph moods:", error);
-    }
-  };
-
-  /** Initial fetch */
-  useEffect(() => {
-    fetchMoods();
   }, []);
 
-  /** Re-fetch graph whenever viewType changes */
-  useEffect(() => {
-    const range = viewType === 'weekly' ? "7d" : "30d";
-    fetchMoodGraphData(range);
+  const fetchMoodGraphData = useCallback(async () => {
+    try {
+      const range = viewType === 'weekly' ? "7d" : "30d";
+      const { data } = await moodGraphRange(range);
+
+      setChartData(
+        data.map((entry: any) => ({
+          date: formatDate(entry.date),
+          mood: entry.mood,
+          fullDate: entry.date,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to fetch graph data:", err);
+    }
   }, [viewType]);
 
-  /** Handle Save */
+  /** Lifecycle */
+  useEffect(() => { fetchMoods(currentPage); }, [fetchMoods, currentPage]);
+  useEffect(() => { fetchMoodGraphData(); }, [fetchMoodGraphData]);
+
+  /** Save handler */
   const handleSaveMood = async (entry: MoodEntry) => {
-    if (entry) {
-      try {
-        await dispatchMoods(entry);
-      } catch (error) {
-        console.error('Error dispatching mood:', error);
-      }
+    try {
+      await dispatchMoods(entry);
+      setMoodEntries(prev => [...prev, entry]);
+    } catch (err) {
+      console.error("Error saving mood:", err);
     }
-    setMoodEntries((prev) => [...prev, entry]); // update state for recent entries
   };
+ const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+ }
 
   return (
     <div className="min-h-screen">
       <div className="max-w-9xl p-6">
-        {/* Page Header */}
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
             Mood Tracking Dashboard
           </h1>
-          <p className="text-lg">
-            Track your emotional wellbeing and discover patterns
-          </p>
+          <p className="text-lg">Track your emotional wellbeing and discover patterns</p>
         </div>
 
-        {/* Main Dashboard Grid */}
+        {/* Mood Logger + Quick Stats */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-          <MoodLogger
-            moodOptions={moodOptions}
-            tagOptions={tagOptions}
-            onSave={handleSaveMood}
-          />
-          <QuickStats moodEntries={moodEntries} moodOptions={moodOptions} total={totalEnteries} moodAverage={moodAverage} />
+          <MoodLogger moodOptions={moodOptions} tagOptions={tagOptions} onSave={handleSaveMood} />
+          <QuickStats moodEntries={moodEntries} moodOptions={moodOptions} total={totalEntries} moodAverage={moodAverage} />
         </div>
 
         {/* Chart + Recent Entries */}
         <MoodTrendsChart
-          chartData={chartData}  // using API-based graph data
+          chartData={chartData}
           viewType={viewType}
           setViewType={setViewType}
           moodOptions={moodOptions}
         />
-        <RecentEntries moodEntries={moodEntries} moodOptions={moodOptions} />
+        <RecentEntries moodEntries={moodEntries} moodOptions={moodOptions} totalPages={totalEntries} currentPage={currentPage}  onPageChange={handlePageChange}/>
       </div>
     </div>
   );
