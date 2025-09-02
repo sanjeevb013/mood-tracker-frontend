@@ -8,16 +8,20 @@ import { MoodOption, MoodEntry, ChartDataPoint } from '@/types/moodTypes';
 import { getMoods, dispatchMoods, moodGraphRange } from '@/services/api/moodServices';
 
 const MoodTrackingPage: React.FC = () => {
+  /** State */
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
-  const [viewType, setViewType] = useState<'weekly' | 'monthly'>('weekly');
-  const [totalEntries, setTotalEntries] = useState<number>(0);
-  const [moodAverage, setMoodAverage] = useState<string>("");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-   const [currentPage, setCurrentPage] = useState<number>(1);
-    //  const entriesPerPage = 10;
-    //  const totalPages = Math.ceil(totalEntries / entriesPerPage);
+  const [viewType, setViewType] = useState<'weekly' | 'monthly'>('weekly');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  /** Static options */
+  // Consolidated stats (instead of 3 separate states)
+  const [stats, setStats] = useState({
+    totalEntries: 0,
+    moodAverage: '',
+    totalPages: 0,
+  });
+
+  /** Static Options */
   const moodOptions: MoodOption[] = useMemo(() => [
     { emoji: '😢', label: 'Sad', value: 1, color: '#e74c3c' },
     { emoji: '😟', label: 'Anxious', value: 2, color: '#f39c12' },
@@ -26,34 +30,38 @@ const MoodTrackingPage: React.FC = () => {
     { emoji: '😄', label: 'Excited', value: 5, color: '#9b59b6' },
   ], []);
 
-  const tagOptions = useMemo(() => [
-    'Work', 'Family', 'Health', 'Social', 'Exercise',
-    'Sleep', 'Stress', 'Achievement', 'Relationship', 'Weather',
-  ], []);
+  const tagOptions = useMemo(
+    () => [
+      'Work', 'Family', 'Health', 'Social', 'Exercise',
+      'Sleep', 'Stress', 'Achievement', 'Relationship', 'Weather',
+    ],
+    []
+  );
 
   /** Helpers */
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-US',
+  const formatDate = useCallback((date: string) => {
+    const options: Intl.DateTimeFormatOptions =
       viewType === 'weekly'
         ? { weekday: 'short' }
-        : { month: 'short', day: 'numeric' }
-    );
+        : { month: 'short', day: 'numeric' };
+
+    return new Date(date).toLocaleDateString('en-US', options);
+  }, [viewType]);
 
   /** API Calls */
   const fetchMoods = useCallback(async (page: number) => {
     try {
-      const { totalPages, averageMood, data } = await getMoods(page);
-      setTotalEntries(totalPages);
-      setMoodAverage(averageMood);
+      const { totalPages, averageMood, data, total } = await getMoods(page);
       setMoodEntries(data);
+      setStats({ totalPages, moodAverage: averageMood, totalEntries: total });
     } catch (err) {
-      console.error("Failed to fetch moods:", err);
+      console.error('Failed to fetch moods:', err);
     }
   }, []);
 
   const fetchMoodGraphData = useCallback(async () => {
     try {
-      const range = viewType === 'weekly' ? "7d" : "30d";
+      const range = viewType === 'weekly' ? '7d' : '30d';
       const { data } = await moodGraphRange(range);
 
       setChartData(
@@ -64,9 +72,9 @@ const MoodTrackingPage: React.FC = () => {
         }))
       );
     } catch (err) {
-      console.error("Failed to fetch graph data:", err);
+      console.error('Failed to fetch graph data:', err);
     }
-  }, [viewType]);
+  }, [viewType, formatDate]);
 
   /** Lifecycle */
   useEffect(() => { fetchMoods(currentPage); }, [fetchMoods, currentPage]);
@@ -76,14 +84,11 @@ const MoodTrackingPage: React.FC = () => {
   const handleSaveMood = async (entry: MoodEntry) => {
     try {
       await dispatchMoods(entry);
-      setMoodEntries(prev => [...prev, entry]);
+      await fetchMoods(currentPage); // refresh after save
     } catch (err) {
-      console.error("Error saving mood:", err);
+      console.error('Error saving mood:', err);
     }
   };
- const handlePageChange = (page: number) => {
-    setCurrentPage(page);
- }
 
   return (
     <div className="min-h-screen">
@@ -98,18 +103,35 @@ const MoodTrackingPage: React.FC = () => {
 
         {/* Mood Logger + Quick Stats */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-          <MoodLogger moodOptions={moodOptions} tagOptions={tagOptions} onSave={handleSaveMood} />
-          <QuickStats moodEntries={moodEntries} moodOptions={moodOptions} total={totalEntries} moodAverage={moodAverage} />
+          <MoodLogger
+            moodOptions={moodOptions}
+            tagOptions={tagOptions}
+            onSave={handleSaveMood}
+          />
+          <QuickStats
+            moodEntries={moodEntries}
+            moodOptions={moodOptions}
+            total={stats.totalEntries}
+            moodAverage={stats.moodAverage}
+          />
         </div>
 
-        {/* Chart + Recent Entries */}
+        {/* Chart */}
         <MoodTrendsChart
           chartData={chartData}
           viewType={viewType}
           setViewType={setViewType}
           moodOptions={moodOptions}
         />
-        <RecentEntries moodEntries={moodEntries} moodOptions={moodOptions} totalPages={totalEntries} currentPage={currentPage}  onPageChange={handlePageChange}/>
+
+        {/* Recent Entries with Pagination */}
+        <RecentEntries
+          moodEntries={moodEntries}
+          moodOptions={moodOptions}
+          totalPages={stats.totalPages}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

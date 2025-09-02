@@ -125,7 +125,7 @@ const RecentEntries: React.FC<RecentEntriesProps> = ({
                   onClick={() => onPageChange(page as number)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === page
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-purple-600 text-white'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
                 >
