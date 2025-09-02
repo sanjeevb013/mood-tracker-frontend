@@ -1,4 +1,3 @@
-// services/moodsService.js
 import axios from '@/lib/axios';
 import { MoodEntry, MoodGraphApiResponse} from "../../types/moodTypes"
 
