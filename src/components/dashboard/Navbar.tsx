@@ -1,11 +1,11 @@
 "use client";
 
-import { Menu, Search, Bell, User, ChevronDown } from "lucide-react";
+import { Menu, Search, Bell, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ThemeToggle from "../buttons/ToggleButton";
 import { useRouter } from "next/navigation";
-import { getAuth, signOut } from "firebase/auth";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/providers/AuthProvider"; // ✅ use your auth context
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -16,9 +16,10 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const auth = getAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  const { user, logout } = useAuth(); // ✅ useAuth context
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -38,8 +39,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      router.push("auth/login");
+      logout(); // ✅ use context logout (clears tokens + redirects)
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -146,7 +146,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
               className={`flex items-center space-x-2 p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${hoverText} ${hoverBg}`}
             >
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                JD
+                {user?.email?.[0]?.toUpperCase() ?? "?"}
               </div>
               <ChevronDown size={16} className="hidden sm:block" />
             </button>
@@ -158,8 +158,9 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
                 }`}
               >
                 <div className={`p-4 border-b ${borderColor}`}>
-                  <p className={`text-sm font-medium ${baseText}`}>John Doe</p>
-                  <p className="text-xs text-gray-500">john@example.com</p>
+                  <p className={`text-sm font-medium ${baseText}`}>
+                    {user?.email ?? "Guest"}
+                  </p>
                 </div>
                 <div className="py-2">
                   <a

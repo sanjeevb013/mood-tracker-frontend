@@ -1,25 +1,76 @@
-"use client"
-import React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig';
+"use client";
 
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
 
-const AuthContext = createContext<{ user: User | null, loading: boolean }>({ user: null, loading: true });
+interface User {
+  id?: string;
+  email?: string;
+  // add more fields as needed
+}
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (accessToken: string, refreshToken: string, user?: User) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
 
-    const [user, setUser] = useState<User | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    // On mount, restore tokens and user if available
+    const access = localStorage.getItem("accessToken");
+    const refresh = localStorage.getItem("refreshToken");
+    const storedUser = localStorage.getItem("user");
+
+    if (access && refresh) {
+      setUser(storedUser ? JSON.parse(storedUser) : { email: "unknown" });
+    }
+    setLoading(false);
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
+  const login = (accessToken: string, refreshToken: string, user?: User) => {
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+
+    setUser(user ?? { email: "unknown" });
+  };
+
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setUser(null);
+    router.push("/auth/login");
+  };
+
+  const isAuthenticated = !!user;
+
+  return (
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, isAuthenticated }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
-export const useAuth = () => useContext(AuthContext);
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+};

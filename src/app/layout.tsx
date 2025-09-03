@@ -5,7 +5,6 @@ import  ThemeProvider  from "../providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 
 import "./globals.css";
-import Footer from "@/components/dashboard/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

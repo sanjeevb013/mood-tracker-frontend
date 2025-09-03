@@ -1,15 +1,13 @@
 "use client";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useState, ChangeEvent, FormEvent } from "react";
-import { FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
-import { auth } from "../../../config/firebaseConfig";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { loginApi } from "@/services/api/authServices";
+import { LoginData } from "@/types/authTypes";
+import { useAuth } from "@/providers/AuthProvider";
 
-interface LoginData {
-  email: string;
-  password: string;
-}
+
 
 interface FormErrors {
   [key: string]: string;
@@ -22,6 +20,7 @@ const initialState: LoginData = {
 
 export default function LoginForm() {
   const router = useRouter();
+  const {login} = useAuth()
   const [formData, setFormData] = useState<LoginData>(initialState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -52,29 +51,24 @@ export default function LoginForm() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // ✅ handle form submit with Firebase Auth
+  // ✅ handle form submit with API call
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
       try {
         setLoading(true);
-        // 🔑 Corrected: use formData not form
-        const resp = await signInWithEmailAndPassword(
-          auth,
-          formData.email,
-          formData.password
-        );
 
-        // save display name in localStorage if available
-        localStorage.setItem("fullName", String(resp.user.displayName || ""));
-
-        // redirect after login
-        router.push("/dashboard");
-        toast.success("logged in successfully")
-        // toast.success("Login successful!");
+        const data = await loginApi(formData);
+        if(data){
+               login(data.accessToken, data.refreshToken);
+                  router.push("/dashboard");
+          toast.success("Logged in successfully!");
+ 
+        }
+      
       } catch (error: any) {
         console.error("Login error:", error);
-        // toast.error("Please enter valid credentials");
+        toast.error(error.message || "Login failed");
       } finally {
         setLoading(false);
       }
@@ -122,38 +116,37 @@ export default function LoginForm() {
 
   return (
     <>
-       {/* Right Side - Form */}
-    <form onSubmit={handleSubmit} className="p-8 md:p-10">
-      <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+      <form onSubmit={handleSubmit} className="p-8 md:p-10">
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
 
-      {renderInput("email", "Email", "email")}
-      {renderInput(
-        "password",
-        "Password",
-        "password",
-        true,
-        () => setShowPassword((prev) => !prev),
-        showPassword
-      )}
+        {renderInput("email", "Email", "email")}
+        {renderInput(
+          "password",
+          "Password",
+          "password",
+          true,
+          () => setShowPassword((prev) => !prev),
+          showPassword
+        )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md transition-colors disabled:opacity-50 cursor-pointer"
-      >
-        {loading ? "Logging in..." : "Login"}
-      </button>
-
-      <div className="flex gap-2 mt-2 items-center justify-center">
-        <span>Don't have an account?</span>
-        <span
-          onClick={()=>router.push('/auth/signup')}
-          className="text-indigo-600 hover:underline cursor-pointer"
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md transition-colors disabled:opacity-50 cursor-pointer"
         >
-          Sign up
-        </span>
-      </div>
-    </form>
-</>
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        <div className="flex gap-2 mt-2 items-center justify-center">
+          <span>Don't have an account?</span>
+          <span
+            onClick={() => router.push("/auth/signup")}
+            className="text-indigo-600 hover:underline cursor-pointer"
+          >
+            Sign up
+          </span>
+        </div>
+      </form>
+    </>
   );
 }

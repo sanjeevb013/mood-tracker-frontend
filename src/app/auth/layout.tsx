@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* Right Side */}
-        <div className="p-8 md:p-10">{children}</div>
+        <div className="p-4 md:p-10">{children}</div>
       </div>
     </div>
   );
