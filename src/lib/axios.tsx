@@ -25,7 +25,6 @@ api.interceptors.response.use(
   (response) => response,
 
   async (error) => {
-      console.log(error,"hhhh")
     if (error.response?.status === 401) {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");

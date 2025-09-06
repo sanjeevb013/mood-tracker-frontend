@@ -5,6 +5,8 @@ import  ThemeProvider  from "../providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 
 import "./globals.css";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +33,10 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`} >
         <ThemeProvider >
           <AuthProvider>
+            <ReactQueryProvider>
             <Toaster position="top-center" reverseOrder={false} />
            {children}
+           </ReactQueryProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

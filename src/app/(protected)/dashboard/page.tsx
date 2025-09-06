@@ -1,25 +1,25 @@
 'use client';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import MoodLogger from '@/components/moodTrackingDashboard/MoodLogger';
 import MoodTrendsChart from '@/components/moodTrackingDashboard/MoodTrendsChart';
 import QuickStats from '@/components/moodTrackingDashboard/QuickStats';
 import RecentEntries from '@/components/moodTrackingDashboard/RecentEnteries';
-import { MoodOption, MoodEntry, ChartDataPoint } from '@/types/moodTypes';
-import { getMoods, dispatchMoods, moodGraphRange } from '@/services/api/moodServices';
+import { MoodOption, MoodEntry } from '@/types/moodTypes';
+import { useMoods, useMoodGraph, useDispatchMood } from "@/hooks/useMood";
 
 const MoodTrackingPage: React.FC = () => {
   /** State */
-  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('weekly');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Consolidated stats (instead of 3 separate states)
-  const [stats, setStats] = useState({
-    totalEntries: 0,
-    moodAverage: '',
-    totalPages: 0,
-  });
+  /** Queries */
+  const { data: moodsData, isLoading: moodsLoading } = useMoods(currentPage);
+  const { data: graphData, isLoading: graphLoading } = useMoodGraph(
+    viewType === 'weekly' ? '7d' : '30d'
+  );
+
+  /** Mutation */
+  const { mutateAsync: saveMood, isPending: savingMood } = useDispatchMood();
 
   /** Static Options */
   const moodOptions: MoodOption[] = useMemo(() => [
@@ -38,57 +38,18 @@ const MoodTrackingPage: React.FC = () => {
     []
   );
 
-  /** Helpers */
-  const formatDate = useCallback((date: string) => {
-    const options: Intl.DateTimeFormatOptions =
-      viewType === 'weekly'
-        ? { weekday: 'short' }
-        : { month: 'short', day: 'numeric' };
-
-    return new Date(date).toLocaleDateString('en-US', options);
-  }, [viewType]);
-
-  /** API Calls */
-  const fetchMoods = useCallback(async (page: number) => {
-    try {
-      const { totalPages, averageMood, data, total } = await getMoods(page);
-      setMoodEntries(data);
-      setStats({ totalPages, moodAverage: averageMood, totalEntries: total });
-    } catch (err) {
-      console.error('Failed to fetch moods:', err);
-    }
-  }, []);
-
-  const fetchMoodGraphData = useCallback(async () => {
-    try {
-      const range = viewType === 'weekly' ? '7d' : '30d';
-      const { data } = await moodGraphRange(range);
-
-      setChartData(
-        data.map((entry: any) => ({
-          date: formatDate(entry.date),
-          mood: entry.mood,
-          fullDate: entry.date,
-        }))
-      );
-    } catch (err) {
-      console.error('Failed to fetch graph data:', err);
-    }
-  }, [viewType, formatDate]);
-
-  /** Lifecycle */
-  useEffect(() => { fetchMoods(currentPage); }, [fetchMoods, currentPage]);
-  useEffect(() => { fetchMoodGraphData(); }, [fetchMoodGraphData]);
-
   /** Save handler */
-  const handleSaveMood = async (entry: MoodEntry) => {
-    try {
-      await dispatchMoods(entry);
-      await fetchMoods(currentPage); // refresh after save
-    } catch (err) {
-      console.error('Error saving mood:', err);
-    }
-  };
+  const handleSaveMood = useCallback(
+    async (entry: MoodEntry) => {
+      try {
+        await saveMood(entry);
+        // React Query will auto-invalidate & refetch moods + graph
+      } catch (err) {
+        console.error('Error saving mood:', err);
+      }
+    },
+    [saveMood]
+  );
 
   return (
     <div className="min-h-screen">
@@ -107,30 +68,44 @@ const MoodTrackingPage: React.FC = () => {
             moodOptions={moodOptions}
             tagOptions={tagOptions}
             onSave={handleSaveMood}
+            // isSaving={savingMood}
           />
           <QuickStats
-            moodEntries={moodEntries}
+            moodEntries={moodsData?.data ?? []}
             moodOptions={moodOptions}
-            total={stats.totalEntries}
-            moodAverage={stats.moodAverage}
+            total={moodsData?.total ?? 0}
+            moodAverage={moodsData?.averageMood ?? ''}
           />
         </div>
 
         {/* Chart */}
         <MoodTrendsChart
-          chartData={chartData}
+          chartData={
+            graphData?.data.map(entry => ({
+              date: new Date(entry.date).toLocaleDateString(
+                'en-US',
+                viewType === 'weekly'
+                  ? { weekday: 'short' }
+                  : { month: 'short', day: 'numeric' }
+              ),
+              mood: entry.mood,
+              fullDate: entry.date,
+            })) ?? []
+          }
           viewType={viewType}
           setViewType={setViewType}
           moodOptions={moodOptions}
+          // isLoading={graphLoading}
         />
 
         {/* Recent Entries with Pagination */}
         <RecentEntries
-          moodEntries={moodEntries}
+          moodEntries={moodsData?.data ?? []}
           moodOptions={moodOptions}
-          totalPages={stats.totalPages}
+          totalPages={moodsData?.totalPages ?? 0}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
+          // isLoading={moodsLoading}
         />
       </div>
     </div>
