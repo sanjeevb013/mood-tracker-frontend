@@ -1,36 +1,43 @@
-// lib/axios.js
-import axios from 'axios';
-import { getAuth } from 'firebase/auth';
+// lib/axios.ts
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://your-api.com/api',
-  timeout: 10000,
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-api.com/api",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use(async (config) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
+// ✅ Attach token before each request
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error: AxiosError): Promise<never> => Promise.reject(error)
+);
 
-  if (user) {
-    const token = await user.getIdToken();
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-}, (error) => Promise.reject(error));
-
+// ✅ Handle responses + unauthorized
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response: AxiosResponse): AxiosResponse => response,
+  async (error: AxiosError): Promise<never> => {
     if (error.response?.status === 401) {
-      console.warn('Token expired or invalid. Redirecting to login...');
-      // Optional: sign out and redirect
-      const auth = getAuth();
-      await auth.signOut();
-      window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        // Clear tokens
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+      }
     }
     return Promise.reject(error);
   }

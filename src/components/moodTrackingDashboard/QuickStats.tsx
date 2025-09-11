@@ -21,7 +21,7 @@ interface MoodDistributionData {
 interface QuickStatsProps {
   moodEntries: MoodEntry[];
   moodOptions: MoodOption[];
-  total:string
+  total:number
   moodAverage:string
 }
 

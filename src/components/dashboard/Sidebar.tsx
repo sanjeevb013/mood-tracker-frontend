@@ -24,12 +24,12 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    href: "/dashboard/profile",
+    href: "/profile",
     label: "Profile",
     icon: User,
   },
   {
-    href: "/dashboard/settings",
+    href: "/settings",
     label: "Settings",
     icon: Settings,
   },
