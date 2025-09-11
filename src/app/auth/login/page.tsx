@@ -60,9 +60,9 @@ export default function LoginForm() {
 
         const data = await loginApi(formData);
         if(data){
-               login(data.accessToken, data.refreshToken);
+               login(data.accessToken, data.refreshToken, data.userId);
                   router.push("/dashboard");
-          toast.success("Logged in successfully!");
+          toast.success(data.message);
  
         }
       

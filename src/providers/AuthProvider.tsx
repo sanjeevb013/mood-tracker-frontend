@@ -10,15 +10,13 @@ import {
 import { useRouter } from "next/navigation";
 
 interface User {
-  id?: string;
-  email?: string;
-  // add more fields as needed
+  id: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (accessToken: string, refreshToken: string, user?: User) => void;
+  login: (accessToken: string, refreshToken: string, userId: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -31,29 +29,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // On mount, restore tokens and user if available
     const access = localStorage.getItem("accessToken");
     const refresh = localStorage.getItem("refreshToken");
-    const storedUser = localStorage.getItem("user");
+    const userId = localStorage.getItem("userId");
 
-    if (access && refresh) {
-      setUser(storedUser ? JSON.parse(storedUser) : { email: "unknown" });
+    if (access && refresh && userId) {
+      setUser({ id: userId });
     }
+
     setLoading(false);
   }, []);
 
-  const login = (accessToken: string, refreshToken: string, user?: User) => {
+  const login = (accessToken: string, refreshToken: string, userId: string) => {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
-    if (user) localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("userId", userId);
 
-    setUser(user ?? { email: "unknown" });
+    setUser({ id: userId });
   };
 
   const logout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    localStorage.removeItem("userId");
     setUser(null);
     router.push("/auth/login");
   };

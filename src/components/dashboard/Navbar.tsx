@@ -146,7 +146,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
               className={`flex items-center space-x-2 p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${hoverText} ${hoverBg}`}
             >
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {user?.email?.[0]?.toUpperCase() ?? "?"}
+                {/* {user?.email?.[0]?.toUpperCase() ?? "?"} */}
               </div>
               <ChevronDown size={16} className="hidden sm:block" />
             </button>
@@ -159,7 +159,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
               >
                 <div className={`p-4 border-b ${borderColor}`}>
                   <p className={`text-sm font-medium ${baseText}`}>
-                    {user?.email ?? "Guest"}
+                    {/* {user?.email ?? "Guest"} */}
                   </p>
                 </div>
                 <div className="py-2">

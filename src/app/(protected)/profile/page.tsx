@@ -1,155 +1,109 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Edit3, Save, X, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-
-// TypeScript interfaces based on your API response
-interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string;
-}
-
-interface UserProfile {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  country: string;
-  address: Address;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
+import {UserProfile, Address} from "@/types/profileTypes"
+import { getProfile, updateProfile } from '@/services/api/profileServices';
+import { ProfileHeader } from '@/components/profileComponents/profileHeader';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import toast from 'react-hot-toast';
 
 const Profile: React.FC = () => {
-  // Initial profile data based on your API response
-  const [profile, setProfile] = useState<UserProfile>({
-    _id: "68b88b0db3423a50abc0ce31",
-    firstName: "rajeev",
-    lastName: "Singh",
-    email: "ssss@yahoo.com",
-    phoneNumber: "+917878329892",
-    country: "India",
-    address: {
-      street: "Delhi",
-      city: "Delhi",
-      state: "Asdas",
-      zip: "111113",
-      country: "India"
-    },
-    createdAt: "2025-09-03T18:38:05.632Z",
-    updatedAt: "2025-09-06T09:10:59.373Z",
-    __v: 0
-  });
-
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+const userId = localStorage.getItem("userId") ?? "";
+const { data: profile, isLoading: fetching, error } = useProfile(userId);
+const { mutate, isPending } = useUpdateProfile();
 
   const handleEdit = (): void => {
+    if (!profile) return;
     setEditMode(true);
     setEditedProfile({ ...profile });
   };
 
   const handleCancel = (): void => {
     setEditMode(false);
-    setEditedProfile(profile);
   };
 
-  const handleSave = async (): Promise<void> => {
-    setLoading(true);
-    
-    try {
-      // Simulate API call - replace with your actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update profile state with edited data
-      setProfile(editedProfile);
-      setEditMode(false);
-      
-      // You would typically make an API call here:
-      // const response = await fetch('/api/profile', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(editedProfile)
-      // });
-      
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    } finally {
-      setLoading(false);
+ const handleSave = (): void => {
+  if (!editedProfile || !userId) return;
+
+  const { _id, createdAt, updatedAt, ...sanitizedProfile } = editedProfile;
+
+  mutate(
+    { userId, data: sanitizedProfile },
+    {
+      onSuccess: (updatedProfileData) => {
+        setEditedProfile(updatedProfileData);
+        setEditMode(false);
+        toast.success("Profile updated successfully");
+      },
+      onError: (error) => {
+        toast.error("Error updating profile:" + error);
+      }
     }
-  };
+  );
+};
+
 
   const handleInputChange = (field: keyof UserProfile, value: string): void => {
-    setEditedProfile(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setEditedProfile((prev) =>
+      prev ? { ...prev, [field]: value } : prev
+    );
   };
 
   const handleAddressChange = (field: keyof Address, value: string): void => {
-    setEditedProfile(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [field]: value
-      }
-    }));
+    setEditedProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            address: {
+              ...prev.address,
+              [field]: value,
+            },
+          }
+        : prev
+    );
   };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const currentProfile = editMode ? editedProfile : profile;
+   const currentProfile = editMode
+    ? editedProfile
+    : profile;
+
+  
+  // ⏳ Loading UI
+  if (fetching || !currentProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg font-medium">Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8 px-4">
     
         {/* Header */}
         <div className=" rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-12">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <User className="w-12 h-12 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    {currentProfile.firstName} {currentProfile.lastName}
-                  </h1>
-                  <p className="text-blue-100 text-lg">{currentProfile.email}</p>
-                </div>
-              </div>
-              <button
-                onClick={editMode ? handleCancel : handleEdit}
-                className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl backdrop-blur-sm transition-all duration-200 flex items-center space-x-2"
-                disabled={loading}
-              >
-                {editMode ? (
-                  <>
-                    <X className="w-5 h-5" />
-                    <span>Cancel</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit3 className="w-5 h-5" />
-                    <span>Edit Profile</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          <ProfileHeader
+  firstName={currentProfile.firstName}
+  lastName={currentProfile.lastName}
+  email={currentProfile.email}
+  editMode={editMode}
+  loading={loading}
+  onEdit={handleEdit}
+  onCancel={handleCancel}
+/>
 
           {/* Profile Content */}
          <div className="p-8">
@@ -342,14 +296,14 @@ const Profile: React.FC = () => {
             <Calendar className="w-5 h-5" />
             <div>
               <p className="text-sm font-medium">Created</p>
-              <p className="text-sm">{formatDate(profile.createdAt)}</p>
+              <p className="text-sm">{formatDate(currentProfile.createdAt)}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <Calendar className="w-5 h-5" />
             <div>
               <p className="text-sm font-medium">Last Updated</p>
-              <p className="text-sm">{formatDate(profile.updatedAt)}</p>
+              <p className="text-sm">{formatDate(currentProfile.updatedAt)}</p>
             </div>
           </div>
         </div>
@@ -371,7 +325,7 @@ const Profile: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={loading}
-          className="px-6 py-3 rounded-xl transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
         >
           <Save className="w-5 h-5" />
           <span>{loading ? "Saving..." : "Save Changes"}</span>
