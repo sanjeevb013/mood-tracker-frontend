@@ -1,13 +1,12 @@
 import { getProfile, updateProfile } from "@/services/api/profileServices";
 import { UpdateProfile, UserProfile } from "@/types/profileTypes";
 import {useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useGetApi } from "./api/useFetchData";
 
-export function useProfile(userId:string){
-    return useQuery<UserProfile>({
-        queryKey:['profile',userId],
-        queryFn: () => getProfile(userId),
-        staleTime: 1000 * 60 * 10
-    })
+export function useProfile(userId: string) {
+  return useGetApi<UserProfile>(['profile', userId], () => getProfile(userId), {
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
 }
 
 export function useUpdateProfile() {

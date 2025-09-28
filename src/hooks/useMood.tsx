@@ -3,11 +3,13 @@ import {
   useMutation, 
   useQueryClient, 
   UseQueryResult, 
-  UseMutationResult 
+  UseMutationResult, 
+  keepPreviousData
 } from "@tanstack/react-query";
 
 import { getMoods, dispatchMoods, moodGraphRange } from "@/services/api/moodServices";
 import { MoodEntry, MoodGraphApiResponse } from "@/types/moodTypes";
+import { useGetApi } from "./api/useFetchData";
 export interface PaginatedMoodsResponse {
   data: MoodEntry[];
   total: number;
@@ -18,12 +20,9 @@ export interface PaginatedMoodsResponse {
 // Fetch paginated moods
 //
 export function useMoods(page: number) {
-  return useQuery<PaginatedMoodsResponse, Error>({ 
-    // 👆 you can replace `any` with a proper `PaginatedMoodsResponse` type if available
-    queryKey: ["moods", page],
-    queryFn: () => getMoods(page),
-    // keepPreviousData: true, // smoother pagination
-    staleTime: 1000 * 60 * 5, // cache 5 min
+  return useGetApi<PaginatedMoodsResponse>(['moods', page], () => getMoods(page), {
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

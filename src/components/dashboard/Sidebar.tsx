@@ -29,8 +29,8 @@ const menuItems = [
     icon: User,
   },
   {
-    href: "/settings",
-    label: "Settings",
+    href: "/blogs",
+    label: "Blogs",
     icon: Settings,
   },
   {
