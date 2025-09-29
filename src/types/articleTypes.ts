@@ -4,7 +4,6 @@ export interface Article {
   description: string;
   author: string;
   image: string;
-  slug: string;
   datePublished: string; // ISO string
   createdAt: string;     // ISO string
   updatedAt: string;     // ISO string
@@ -17,4 +16,37 @@ export interface GetArticlesResponse {
   totalPages: number;
   totalArticles: number;
   articles: Article[];
+}
+
+export interface ArticleDetailResponse {
+  success: boolean;
+  data: ArticleDetail;
+}
+
+export interface ArticleDetail {
+  _id: string;
+  articleId: ArticleCard;
+  title: string;
+  description: string;
+  author: string;
+  image: string;
+  date: string; // ISO date string
+  content: ContentBlock[];
+  __v: number;
+}
+
+export interface ArticleCard {
+  _id: string;
+  title: string;
+  description: string;
+  author: string;
+  image: string;
+  datePublished: string; // ISO date string
+}
+
+export interface ContentBlock {
+  _id: string;
+  header: string;
+  paragraphs: string[];
+  bulletPoints: string[];
 }
