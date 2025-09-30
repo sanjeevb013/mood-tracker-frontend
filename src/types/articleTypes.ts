@@ -1,3 +1,4 @@
+//get Article response
 export interface Article {
   _id: string;
   title: string;
@@ -18,6 +19,7 @@ export interface GetArticlesResponse {
   articles: Article[];
 }
 
+// Get Detail Article response
 export interface ArticleDetailResponse {
   success: boolean;
   data: ArticleDetail;
@@ -44,9 +46,31 @@ export interface ArticleCard {
   datePublished: string; // ISO date string
 }
 
+// export interface BulletPoint {
+//   text: string;
+// }
+
 export interface ContentBlock {
   _id: string;
   header: string;
   paragraphs: string[];
-  bulletPoints: string[];
+  bulletPoints: [];
+}
+
+
+// ADD Article types
+
+export interface ArticlePayload {
+  title: string;
+  description: string;
+  author: string;
+  date: string; // ISO date string
+  image: string;
+  content: ArticleSection[];
+}
+
+export interface ArticleSection {
+  header: string;
+  paragraphs?: string[];
+  bulletPoints?: string[];
 }

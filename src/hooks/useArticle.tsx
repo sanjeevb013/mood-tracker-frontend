@@ -1,6 +1,6 @@
-import {  ArticleDetailResponse, GetArticlesResponse } from "@/types/articleTypes";
-import { useGetApi } from "./api/useFetchData";
-import { getArticle, getDetailedArticle } from "@/services/api/articleServices";
+import {  ArticleDetailResponse, ArticlePayload, GetArticlesResponse } from "@/types/articleTypes";
+import { useGetApi, usePostApi } from "./api/useFetchData";
+import { addArticle, getArticle, getDetailedArticle } from "@/services/api/articleServices";
 import { keepPreviousData } from "@tanstack/react-query";
 
 export function useGetArticle(page:number){
@@ -15,4 +15,15 @@ export function useGetDetailedArticle(id:string){
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5
   })
+}
+
+export function useDispatchArticle() {
+  return usePostApi<ArticleDetailResponse, ArticlePayload>(
+    addArticle,
+    {
+      onSuccess: () => {
+        console.log("Article posted successfully!");
+      },
+    }
+  );
 }

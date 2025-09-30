@@ -74,7 +74,7 @@ export default function BlogPage({ params }: { params: Promise<{ id: string }> }
       {/* Back Button */}
       <div className="max-w-4xl mx-auto px-6 py-6">
         <Link
-          href="/"
+          href="/blogs"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={20} />
@@ -91,7 +91,7 @@ export default function BlogPage({ params }: { params: Promise<{ id: string }> }
                 {section.header}
               </h2>
 
-              {section.paragraphs.length > 0 && (
+              {section.paragraphs && section.paragraphs.length > 0 && (
                 <div className="space-y-4 text-gray-700 leading-relaxed">
                   {section.paragraphs.map((paragraph, pIndex) => (
                     <p key={pIndex} className="text-lg">
@@ -101,10 +101,10 @@ export default function BlogPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
 
-              {section.bulletPoints.length > 0 && (
+              {section.bulletPoints && section.bulletPoints.length > 0 && (
                 <ul className="mt-4 space-y-3">
-                  {section.bulletPoints.map((point, bIndex) => (
-                    <li key={bIndex} className="flex items-start gap-3 text-gray-700">
+                  {section.bulletPoints.map((point, bpIndex) => (
+                    <li key={bpIndex} className="flex items-start gap-3 text-gray-700">
                       <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></span>
                       <span className="text-lg">{point}</span>
                     </li>

@@ -1,27 +1,8 @@
-// export default function BlogList() {
-//   const blogs = [
-//     { id: "1", title: "First Blog" },
-//     { id: "2", title: "Second Blog" },
-//   ];
-
-//   return (
-//     <div>
-//       <h1>Blogs</h1>
-//       {blogs.map((blog) => (
-//         <a key={blog.id} href={`/blogs/${blog.id}`}>
-//           {blog.title}
-//         </a>
-//       ))}
-//     </div>
-//   );
-// }
-
-// ✅ This enables **SSG** (Static Site Generation)
-"use client"
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useGetArticle } from "@/hooks/useArticle"; // adjust path if needed
+import { useGetArticle } from "@/hooks/useArticle";
 import { Article } from "@/types/articleTypes";
 
 export default function BlogList() {
@@ -48,8 +29,8 @@ export default function BlogList() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen">
+      <div className="w-full p-[4rem]">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-extrabold mb-4">
@@ -59,6 +40,16 @@ export default function BlogList() {
             Explore tips on mental health, mood balance, and fitness to live a
             healthier and happier life.
           </p>
+        </div>
+
+        {/* Create Article Button */}
+        <div className="mb-8 flex justify-end">
+          <Link
+            href="/blogs/createArticle"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Create Article
+          </Link>
         </div>
 
         {/* Blogs Grid */}
