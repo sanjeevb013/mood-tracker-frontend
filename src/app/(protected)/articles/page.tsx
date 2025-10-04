@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useGetArticle } from "@/hooks/useArticle";
+import { useGetArticle } from "@/hooks/features/useArticle";
 import { Article } from "@/types/articleTypes";
 
 export default function BlogList() {
@@ -45,7 +45,7 @@ export default function BlogList() {
         {/* Create Article Button */}
         <div className="mb-8 flex justify-end">
           <Link
-            href="/blogs/createArticle"
+            href="/articles/createArticle"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Create Article
@@ -57,8 +57,8 @@ export default function BlogList() {
           {articles.map((blog) => (
             <Link
               key={blog._id}
-              href={`/blogs/${blog._id}`}
-              className="group block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition duration-300"
+              href={`/articles/${blog._id}`}
+              className="group block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition duration-300 border border-white"
             >
               <div className="relative h-48 w-full overflow-hidden">
                 <img
@@ -88,7 +88,7 @@ export default function BlogList() {
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="px-4 py-2 rounded hover:bg-gray-300 disabled:opacity-50"
           >
             Previous
           </button>
@@ -96,7 +96,7 @@ export default function BlogList() {
           <button
             onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={page === totalPages}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="px-4 py-2 rounded hover:bg-gray-300 disabled:opacity-50"
           >
             Next
           </button>

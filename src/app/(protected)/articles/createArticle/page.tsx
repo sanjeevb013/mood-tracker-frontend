@@ -1,31 +1,11 @@
 "use client"
 
-import { useState, useActionState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDispatchArticle } from "@/hooks/useArticle";
-
-type ContentSection = {
-  id: string;
-  header: string;
-  paragraphs: string[];
-  bulletPoints: string[];
-};
-
-type FormErrors = {
-  title?: string;
-  description?: string;
-  author?: string;
-  image?: string;
-  content?: string;
-  sections?: { [key: string]: string };
-};
-
-type FormState = {
-  errors: FormErrors;
-  generalError: string;
-  success: boolean;
-};
+import { useDispatchArticle } from "@/hooks/features/useArticle";
+import { ContentSection, FormState, FormErrors } from "@/types/articleTypes";
+import toast from "react-hot-toast";
 
 async function validateAndPrepareArticle(formData: FormData): Promise<{ 
   errors: FormErrors; 
@@ -37,7 +17,17 @@ async function validateAndPrepareArticle(formData: FormData): Promise<{
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const author = formData.get('author') as string;
-    const image = formData.get('image') as string;
+    const imageFile = formData.get('image') as File;
+
+    // Validate image file
+    let imageError = "";
+    if (!imageFile || imageFile.size === 0) {
+      imageError = "Please select an image file";
+    } else if (!imageFile.type.startsWith('image/')) {
+      imageError = "Please select a valid image file";
+    } else if (imageFile.size > 5 * 1024 * 1024) { // 5MB limit
+      imageError = "Image size must be less than 5MB";
+    }
 
     // Extract sections data
     const sectionsData: ContentSection[] = [];
@@ -87,8 +77,8 @@ async function validateAndPrepareArticle(formData: FormData): Promise<{
       errors.author = "Author name must be at least 2 characters long";
     }
 
-    if (!image?.trim() || !isValidUrl(image.trim())) {
-      errors.image = "Please provide a valid image URL";
+    if (imageError) {
+      errors.image = imageError;
     }
 
     // Validate content sections
@@ -128,7 +118,7 @@ async function validateAndPrepareArticle(formData: FormData): Promise<{
       };
     }
 
-    // Format data
+    // Format data for FormData submission
     const formattedContent = sectionsData
       .filter((section) => section.header.trim())
       .map((section) => {
@@ -164,7 +154,6 @@ async function validateAndPrepareArticle(formData: FormData): Promise<{
       description: description.trim(),
       author: author.trim(),
       date: new Date().toISOString(),
-      image: image.trim(),
       content: formattedContent,
     };
 
@@ -182,15 +171,6 @@ async function validateAndPrepareArticle(formData: FormData): Promise<{
   }
 }
 
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export default function AddArticlePage() {
   const router = useRouter();
   const { mutate: dispatchArticle, isPending, error } = useDispatchArticle();
@@ -202,6 +182,8 @@ export default function AddArticlePage() {
   });
 
   const [submittedData, setSubmittedData] = useState<any>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [contentSections, setContentSections] = useState<ContentSection[]>([
     {
@@ -212,52 +194,45 @@ export default function AddArticlePage() {
     },
   ]);
 
-  const handleSubmit = async (formData: FormData) => {
-    const validationResult = await validateAndPrepareArticle(formData);
-    
-    if (!validationResult.isValid) {
-      setFormState({
-        errors: validationResult.errors,
-        generalError: "",
-        success: false,
-      });
-      return;
-    }
-
-    // Print the submitted data to console
-    console.log("Submitted Article Data:", validationResult.articleData);
-    
-    // Also store it in state to display on the page
-    setSubmittedData(validationResult.articleData);
-    
-    // Set success state
+const handleSubmit = async (formData: FormData) => {
+  // Prevent default form submission behavior by using preventDefault in the form
+  const validationResult = await validateAndPrepareArticle(formData);
+  
+  if (!validationResult.isValid) {
     setFormState({
-      errors: {},
+      errors: validationResult.errors,
       generalError: "",
-      success: true,
+      success: false,
     });
+    return; // Stop here if validation fails
+  }
 
-     dispatchArticle(validationResult.articleData, {
+  // Only proceed if validation passes
+  const imageFile = formData.get('image') as File;
+  
+  // Create the complete article data
+  const completeArticleData = {
+    ...validationResult.articleData,
+    image: imageFile,
+  };
+
+  // Store submitted data for display
+  setSubmittedData(validationResult.articleData);
+
+  // API call
+  dispatchArticle(completeArticleData, {
     onSuccess: () => {
-      // Print the submitted data to console
-      console.log("Submitted Article Data:", validationResult.articleData);
-      
-      // Also store it in state to display on the page
-      setSubmittedData(validationResult.articleData);
-      
-      // Set success state
+      toast.success("Article submitted successfully");
       setFormState({
         errors: {},
         generalError: "",
         success: true,
       });
-
-      // Optional: Redirect after success
-    //   setTimeout(() => {
-    //     router.push("/blogs");
-    //   }, 2000);
+      
+      // router.push('/articles'); 
     },
     onError: (error) => {
+      toast.error(error.message)
       setFormState({
         errors: {},
         generalError: error.message || "Failed to add article",
@@ -265,8 +240,33 @@ export default function AddArticlePage() {
       });
     },
   });
-
-  
+};
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFileName(file.name);
+      
+      // Validate file size immediately
+      if (file.size > 5 * 1024 * 1024) {
+        setFormState(prev => ({
+          ...prev,
+          errors: {
+            ...prev.errors,
+            image: "Image size must be less than 5MB"
+          }
+        }));
+      } else {
+        setFormState(prev => ({
+          ...prev,
+          errors: {
+            ...prev.errors,
+            image: undefined
+          }
+        }));
+      }
+    } else {
+      setSelectedFileName("");
+    }
   };
 
   const addSection = () => {
@@ -339,7 +339,7 @@ export default function AddArticlePage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/blogs"
+            href="/articles"
             className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2"
           >
             <span>←</span> Back to Blogs
@@ -359,7 +359,6 @@ export default function AddArticlePage() {
           </div>
         )}
 
-
         {/* Error Alert */}
         {(formState.generalError || error) && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -370,7 +369,10 @@ export default function AddArticlePage() {
         )}
 
         {/* Form */}
-        <form action={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl shadow-sm">
+        <form   onSubmit={(e) => { e.preventDefault(); // Prevent default form submission
+         const formData = new FormData(e.currentTarget);
+          handleSubmit(formData);
+          }} className="space-y-8 bg-white p-8 rounded-xl shadow-sm" >
           {/* Basic Info Section */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">
@@ -428,18 +430,35 @@ export default function AddArticlePage() {
               )}
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div>
               <label htmlFor="image" className="block text-sm font-semibold mb-2 text-gray-700">
-                Image URL <span className="text-red-500">*</span>
+                Article Image <span className="text-red-500">*</span>
               </label>
-              <input
-                type="url"
-                id="image"
-                name="image"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
-              />
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-6 py-3 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition duration-300"
+                >
+                  Choose Image
+                </button>
+                <span className="text-sm text-gray-600">
+                  {selectedFileName || "No file chosen"}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+              </p>
               {formState.errors.image && (
                 <p className="mt-1 text-sm text-red-600">{formState.errors.image}</p>
               )}

@@ -1,5 +1,5 @@
 import {  ArticleDetailResponse, ArticlePayload, GetArticlesResponse } from "@/types/articleTypes";
-import { useGetApi, usePostApi } from "./api/useFetchData";
+import { useGetApi, usePostApi } from "../api/useFetchData";
 import { addArticle, getArticle, getDetailedArticle } from "@/services/api/articleServices";
 import { keepPreviousData } from "@tanstack/react-query";
 

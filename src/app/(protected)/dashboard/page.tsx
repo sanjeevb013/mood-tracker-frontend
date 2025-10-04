@@ -5,7 +5,7 @@ import MoodTrendsChart from '@/components/moodTrackingDashboard/MoodTrendsChart'
 import QuickStats from '@/components/moodTrackingDashboard/QuickStats';
 import RecentEntries from '@/components/moodTrackingDashboard/RecentEnteries';
 import { MoodOption, MoodEntry } from '@/types/moodTypes';
-import { useMoods, useMoodGraph, useDispatchMood } from "@/hooks/useMood";
+import { useMoods, useMoodGraph, useDispatchMood } from "@/hooks/features/useMood";
 
 const MoodTrackingPage: React.FC = () => {
   /** State */

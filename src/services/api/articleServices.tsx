@@ -12,7 +12,15 @@ export const getDetailedArticle = async (id:string) =>{
 }
 
 //add article 
-export const addArticle = async (data:ArticlePayload) =>{
-    const response = await axios.post("articles/add-article",data);
-    return response.data;
+// export const addArticle = async (data:ArticlePayload) =>{
+//     const response = await axios.post("articles/add-article",data,{headers:{"Content-Type":"multipart-for"}});
+//     return response.data;
+// }
+export const addArticle = async (data: ArticlePayload) => {
+  const response = await axios.post("articles/add-article", data, {
+    headers: {
+      'Content-Type': 'multipart/form-data', // Important for file uploads
+    },
+  });
+  return response.data;
 }

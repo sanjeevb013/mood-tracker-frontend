@@ -1,6 +1,6 @@
 "use client"
 import { use } from "react";
-import { useGetDetailedArticle } from "@/hooks/useArticle";
+import { useGetDetailedArticle } from "@/hooks/features/useArticle";
 import { useParams } from "next/navigation";
 import { Calendar, User, Clock, ArrowLeft } from "lucide-react";
 import Image from "next/image";
@@ -38,21 +38,21 @@ export default function BlogPage({ params }: { params: Promise<{ id: string }> }
     month: "long",
     day: "numeric"
   });
-
+  console.log(article,"sa")
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="relative w-full h-96 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-        {/* {article?.image && (
+        {article?.image && (
           <Image
             src={article.image}
             alt={article.title}
             fill
-            className="object-cover mix-blend-overlay"
+            className="object-cover"
             priority
           />
-        )} */}
+        )}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="max-w-4xl mx-auto px-6 text-center text-white">
             <h1 className="text-5xl font-bold mb-4 leading-tight">{article.title}</h1>

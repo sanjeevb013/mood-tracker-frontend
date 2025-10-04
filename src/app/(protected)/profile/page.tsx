@@ -4,7 +4,7 @@ import { User, Edit3, Save, X, Mail, Phone, MapPin, Calendar } from 'lucide-reac
 import {UserProfile, Address} from "@/types/profileTypes"
 import { getProfile, updateProfile } from '@/services/api/profileServices';
 import { ProfileHeader } from '@/components/profileComponents/profileHeader';
-import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { useProfile, useUpdateProfile } from '@/hooks/features/useProfile';
 import toast from 'react-hot-toast';
 
 const Profile: React.FC = () => {

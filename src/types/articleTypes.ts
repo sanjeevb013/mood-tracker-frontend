@@ -74,3 +74,27 @@ export interface ArticleSection {
   paragraphs?: string[];
   bulletPoints?: string[];
 }
+
+//
+
+export type ContentSection = {
+  id: string;
+  header: string;
+  paragraphs: string[];
+  bulletPoints: string[];
+};
+
+export type FormErrors = {
+  title?: string;
+  description?: string;
+  author?: string;
+  image?: string;
+  content?: string;
+  sections?: { [key: string]: string };
+};
+
+export type FormState = {
+  errors: FormErrors;
+  generalError: string;
+  success: boolean;
+};

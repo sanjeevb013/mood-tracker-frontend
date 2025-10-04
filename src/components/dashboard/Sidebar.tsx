@@ -29,8 +29,8 @@ const menuItems = [
     icon: User,
   },
   {
-    href: "/blogs",
-    label: "Blogs",
+    href: "/articles",
+    label: "Health Articles",
     icon: Settings,
   },
   {

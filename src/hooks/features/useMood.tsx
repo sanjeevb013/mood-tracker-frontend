@@ -9,7 +9,7 @@ import {
 
 import { getMoods, dispatchMoods, moodGraphRange } from "@/services/api/moodServices";
 import { MoodEntry, MoodGraphApiResponse } from "@/types/moodTypes";
-import { useGetApi } from "./api/useFetchData";
+import { useGetApi } from "../api/useFetchData";
 export interface PaginatedMoodsResponse {
   data: MoodEntry[];
   total: number;
