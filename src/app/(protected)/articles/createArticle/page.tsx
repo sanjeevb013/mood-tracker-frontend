@@ -228,7 +228,7 @@ const handleSubmit = async (formData: FormData) => {
         generalError: "",
         success: true,
       });
-      
+       window.location.href = "/articles";
       // router.push('/articles'); 
     },
     onError: (error) => {
@@ -609,10 +609,10 @@ const handleSubmit = async (formData: FormData) => {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {isPending ? (
-                <span className="flex items-center justify-center gap-2">
+                <span className="flex items-center justify-center gap-2" >
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
